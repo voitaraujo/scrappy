@@ -4,21 +4,30 @@
   yoink'ed his code bc i may needed to make some minor changes to it!
 */
 
-import getUrls from "get-urls";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+
+// import getUrls from "get-urls";
 import isBase64 from "is-base64";
 import util from "util";
-import request from "request";
+const request = util.promisify(require('request'));
 
+// commited getUrls part bc getUrls consume too much memory in vercel deployment(package re2)
 export const urlImageIsAccessible = async (url) => {
-  const correctedUrls = getUrls(url);
+  // const correctedUrls = getUrls(url);
   if (isBase64(url, { allowMime: true })) {
     return true;
   }
-  if (correctedUrls.size !== 0) {
-    const urlResponse = await request(correctedUrls.values().next().value);
-    const contentType = urlResponse.headers["content-type"];
-    return new RegExp("image/*").test(contentType);
-  }
+
+  // if (correctedUrls.size !== 0) {
+  //   const urlResponse = await request(correctedUrls.values().next().value);
+  //   const contentType = urlResponse.headers["content-type"];
+  //   return new RegExp("image/*").test(contentType);
+  // }
+
+  const urlResponse = await request(url);
+  const contentType = urlResponse.headers["content-type"];
+  return new RegExp("image/*").test(contentType);
 };
 
 const getTitle = async (page) => {
