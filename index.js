@@ -1,37 +1,20 @@
-const app = require("express")();
+import express from "express";
+import { ScrappingService } from "./scrappingService.js";
 
-let chrome = {};
-let puppeteer;
+const app = express();
 
-if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
-  chrome = require("chrome-aws-lambda");
-  puppeteer = require("puppeteer-core");
-} else {
-  puppeteer = require("puppeteer");
-}
-
-app.get("/api", async (req, res) => {
-  let options = {};
-
-  if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
-    options = {
-      args: [...chrome.args, "--hide-scrollbars", "--disable-web-security"],
-      defaultViewport: chrome.defaultViewport,
-      executablePath: await chrome.executablePath,
-      headless: true,
-      ignoreHTTPSErrors: true,
-    };
-  }
-
+app.get("/preview", async (req, res) => {
   try {
-    let browser = await puppeteer.launch(options);
+    // BASE_ENDPOINT/preview?uri=https://www.facebook.com
+    const url = decodeURI(req.query.uri);
 
-    let page = await browser.newPage();
-    await page.goto("https://www.google.com");
-    res.send(await page.title());
+    const result = await ScrappingService(url);
+
+    res.status(200).send(result);
   } catch (err) {
-    console.error(err);
-    return null;
+    res.status(400).send({
+      message: err.message,
+    });
   }
 });
 
@@ -39,4 +22,4 @@ app.listen(process.env.PORT || 4000, () => {
   console.log("Server started");
 });
 
-module.exports = app;
+export default app;
