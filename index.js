@@ -3,6 +3,12 @@ import { ScrappingService } from "./scrappingService.js";
 
 const app = express();
 
+app.get("/", async (req, res) => {
+  res.status(200).send({
+    message: 'consume this api by making an GET request to "BASE_ENDPOINT/preview?uri=https://www.facebook.com"'
+  });
+})
+
 app.get("/preview", async (req, res) => {
   try {
     // BASE_ENDPOINT/preview?uri=https://www.facebook.com

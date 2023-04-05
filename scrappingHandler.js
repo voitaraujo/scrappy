@@ -171,8 +171,8 @@ export const scrappingHandler = async (page, uri, screenCaptureB64) => {
     description: await getDescription(page),
     domain: await getDomainName(page, uri),
     preview: screenCaptureB64,
-    // img: await getImg(page, uri),
     favicon: await getFavicon(page, uri),
+    previewFrom: new Date()
   };
 
   return obj;

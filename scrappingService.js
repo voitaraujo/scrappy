@@ -79,15 +79,14 @@ export async function ScrappingService(uri) {
     await browser.close();
     return result;
   } catch (err) {
-    console.log(err.message);
     await browser.close();
     return {
       title: "",
       description: "",
       domain: "",
       preview: null,
-      img: "",
       favicon: "",
+      previewFrom: new Date()
     };
   }
 }
