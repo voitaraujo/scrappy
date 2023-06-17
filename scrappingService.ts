@@ -1,42 +1,22 @@
-import { scrappingHandler, urlImageIsAccessible } from "./scrappingHandler.js";
+import puppeteer from "puppeteer-extra";
+import pluginStealth from "puppeteer-extra-plugin-stealth";
 import request from "request";
+import { scrappingHandler, urlImageIsAccessible } from "./scrappingHandler.js";
 
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
+export async function ScrappingService(uri: string) {
+  puppeteer.use(pluginStealth());
 
-let chrome = {};
-let puppeteer;
-
-if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
-  chrome = require("chrome-aws-lambda");
-  puppeteer = require("puppeteer-core");
-} else {
-  puppeteer = require("puppeteer");
-}
-
-export async function ScrappingService(uri) {
-  // puppeteer.use(StealthPlugin());
   const pptrAgent =
     "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)";
   const pptrExecutablePath = "/opt/homebrew/bin/chromium";
 
   let params;
 
-  if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
-    params = {
-      args: [...chrome.args, "--hide-scrollbars", "--disable-web-security"],
-      defaultViewport: chrome.defaultViewport,
-      executablePath: await chrome.executablePath,
-      headless: true,
-      ignoreHTTPSErrors: true,
-    };
-  } else {
-    params = {
-      headless: true,
-      args: [],
-      executablePath: pptrExecutablePath,
-    };
-  }
+  params = {
+    headless: true,
+    args: [],
+    executablePath: pptrExecutablePath,
+  };
 
   const browser = await puppeteer.launch(params);
   const page = await browser.newPage();
@@ -61,7 +41,7 @@ export async function ScrappingService(uri) {
     //   fs.mkdirSync(path.dirname(pathToPreview))
     // }
 
-    let preview2B64 = await page.screenshot({
+    let preview2B64: string | Buffer | null = await page.screenshot({
       // path: pathToPreview,
       type: "jpeg",
       quality: 50,
@@ -86,7 +66,7 @@ export async function ScrappingService(uri) {
       domain: "",
       preview: null,
       favicon: "",
-      previewFrom: new Date()
+      previewFrom: new Date(),
     };
   }
 }
