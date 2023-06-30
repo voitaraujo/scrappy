@@ -1,5 +1,7 @@
 # An API to request url scrapping
 
+### the deployed version at https://scrappingservice.vercel.app/ is outdated!
+
 ## How to run:
 > Clone the project to your machine and install the dependencies with `yarn` or `npm install`
 
