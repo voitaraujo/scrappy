@@ -1,27 +1,27 @@
-import treblle from "@treblle/express";
 import dotenv from "dotenv";
 import express from "express";
 
-// import { ScrappingService } from "./scrappingService.js";
+import { ScrappingHandler } from "./ScrappingHandler.js";
+import { TOnlyParam } from "./types.js";
 
 dotenv.config();
+const PORT = process.env.PORT || 4000;
 
 const app = express();
-app.use(treblle());
 
 app.get("/", async (req, res) => {
   res.status(200).send({
     message:
-      "consume this api by making an GET request to BASE_ENDPOINT/preview?uri=https://www.facebook.com",
+      "consume this api by making an GET request to BASE_ENDPOINT/scrap?uri=https://www.facebook.com",
   });
 });
 
-app.get("/preview", async (req, res) => {
+app.get("/scrap", async (req, res) => {
   let url: string;
   let mode: "auto" | "force" = "auto";
   let only: TOnlyParam = null;
-  let coverType: "arbitraryChoosenImage" | "screenCapture" = 'screenCapture'
-  let coverAs: 'b46' | 'source' = 'source'
+  let coverType: "arbitraryChoosenImage" | "screenCapture" = "screenCapture";
+  let coverAs: "b64" | "source" = "source";
 
   try {
     if (typeof req.query.uri !== "string" || req.query.uri.trim() === "") {
@@ -43,7 +43,7 @@ app.get("/preview", async (req, res) => {
     if (typeof req.query.only !== "undefined") {
       if (
         typeof req.query.only === "string" &&
-        (req.query.only === "updatedAt" ||
+        (req.query.only === "scrappedAt" ||
           req.query.only === "title" ||
           req.query.only === "description" ||
           req.query.only === "domain" ||
@@ -61,9 +61,12 @@ app.get("/preview", async (req, res) => {
     if (typeof req.query.coverType !== "undefined") {
       if (
         typeof req.query.coverType === "string" &&
-        (req.query.coverType.trim() === "arbitraryChoosenImage" || req.query.coverType.trim() === "screenCapture")
+        (req.query.coverType.trim() === "arbitraryChoosenImage" ||
+          req.query.coverType.trim() === "screenCapture")
       ) {
-        coverType = req.query.coverType.trim() as "arbitraryChoosenImage" | "screenCapture";
+        coverType = req.query.coverType.trim() as
+          | "arbitraryChoosenImage"
+          | "screenCapture";
       } else {
         throw new Error("invalid 'coverType' param");
       }
@@ -72,17 +75,30 @@ app.get("/preview", async (req, res) => {
     if (typeof req.query.coverAs !== "undefined") {
       if (
         typeof req.query.coverAs === "string" &&
-        (req.query.coverAs.trim() === "arbitraryChoosenImage" || req.query.coverAs.trim() === "screenCapture")
+        (req.query.coverAs.trim() === "b64" ||
+          req.query.coverAs.trim() === "source")
       ) {
-        coverAs = req.query.coverAs.trim() as 'b46' | 'source';
+        coverAs = req.query.coverAs.trim() as "b64" | "source";
       } else {
         throw new Error("invalid 'coverAs' param");
       }
     }
 
-    // const result = await ScrappingService(url);
+    const result = await ScrappingHandler(url, coverType, coverAs);
 
-    // res.status(200).send(result);
+    if (result === null) {
+      throw new Error("Internal error");
+    }
+
+    const message = "image is being returned either screenCapture as b64 or arbitraryChoosenImage as src since mixing coverType and coverAs parameters isn't fully supported yet";
+
+    res
+      .status(200)
+      .json(
+        only === null
+          ? { scrappingResults: result, message }
+          : { scrappingResults: { [only]: result[only] }, message }
+      );
   } catch (err: any) {
     res.status(400).send({
       message: err.message,
@@ -90,32 +106,8 @@ app.get("/preview", async (req, res) => {
   }
 });
 
-app.listen(process.env.PORT || 4000, () => {
-  console.log("Server started");
+app.listen(PORT, () => {
+  console.log("Server started on port: " + PORT);
 });
 
 export default app;
-
-
-interface ICachedPreview {
-  url: string;
-  updatedAt: Date;
-  title: string;
-  description: string;
-  domain: string;
-  https: boolean;
-  lang: string;
-
-  favIconSrc: string;
-  arbitraryChoosenImageSrc: string;
-  screenCaptureSrc: string;
-}
-
-type TOnlyParam =
-  | keyof Omit<
-      ICachedPreview,
-      "url" | "arbitraryChoosenImageSrc" | "screenCaptureSrc" | "favIconSrc"
-    >
-  | "image"
-  | "favicon"
-  | null;
